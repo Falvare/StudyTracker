@@ -45,30 +45,8 @@ notification.notify(title='Congratulations!', message='You have completed your s
 
 today = str(date.today())
 
-if not os.path.exists(sbj_file):
-    with open(sbj_file, 'x') as subject:
-        subject.write('DATE:')
-        subject.write(today)
-        subject.write('\n')
-        subject.write('SESSIONS:')
-        subject.write(str(sessions))
-        subject.write('\n')
-        subject.write('HOURS:')
-        subject.write(str(hours))
-        subject.write('\n')
-        subject.write('\n')
-else:
-    with open(sbj_file, 'a') as subject:
-        subject.write('DATE:')
-        subject.write(today)
-        subject.write('\n')
-        subject.write('SESSIONS:')
-        subject.write(str(sessions))
-        subject.write('\n')
-        subject.write('HOURS:')
-        subject.write(str(hours))
-        subject.write('\n')
-        subject.write('\n')
+with open(sbj_file, 'a') as subject:
+    subject.write(f'DATE:{today}\nSESSIONS:{str(sessions)}\nHOURS:{str(hours)}\n\n')
 
 session_lst = []
 hours_lst = []
