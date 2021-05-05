@@ -1,105 +1,78 @@
-import os
+import sqlite3
+from plyer import notification
 import time
 from datetime import date
+from pymsgbox import *
 
-from plyer import notification
+option = None
 
-# Change the directory to the folder where you would like to save your study tracker document
-os.chdir(r'C:\Users\19156\Desktop\python\Study Tracker')
+while option != '3':
 
+    print('PLEASE SELECT AN OPTION:')
+    print('1.start study session')
+    print('2.view stats')
+    print('3.quit')
+    print('')
 
-def timer(study, brk):
-    study = study * 60
-    brk = brk * 60
-    time.sleep(5)
-    notification.notify(title='Begin', message='Your study session has started')
-    time.sleep(study)
-    notification.notify(title='Break time', message='take a break')
-    time.sleep(brk)
+    choice = input('option:')
 
-
-choice = None
-
-while choice != 3 or choice is None:
-    print('1.Start new study session')
-    print('2.View stats')
-    print('3.Exit')
-
-    choice = input('choice(1,2,3):')
     if choice == '1':
-        sbj = input('What are you studying?:')
-        sbj_file = sbj.capitalize() + '.txt'
-
-        hours = 0
         sessions = 0
+        hours = 0
+        date = date.today()
+        subject = input('please enter subject name:')
 
-        choice = 1
-        while choice != sessions:
+        con = sqlite3.connect('subjects.db')
+        cur = con.cursor()
+        command = '''CREATE TABLE IF NOT EXISTS {} (
+                    sessions INTEGER, 
+                    hours FLOAT, 
+                    date TEXT)'''.format(subject)
+        cur.execute(command)
+
+        while True:
             print('Your study session will begin in 5 seconds')
-            timer(30, 5)
-            notification.notify(title='Continue',
-                                message='You have completed your study session(s). Would you like to continue?')
-            sessions = sessions + 1
-            if sessions == sessions + 2:
-                hours = hours + 1
-            else:
-                hours = hours + .5
-            cont = input('Would you like to continue?:').capitalize()
-            if cont == 'Yes':
-                choice = choice + 1
+            time.sleep(5)
+            notification.notify(title=subject, message='your study session has started', timeout=10)
+            time.sleep(1800)
+            notification.notify(title=subject, message='Your study session has ended. Would you like to continue?',
+                                timeout=5)
+            sessions += 1
+            hours += .5
+            con = confirm(text='Your study session has ended. Would you like to continue?', title=subject,
+                          buttons=['Yes', 'No'])
+            if con == 'Yes':
                 continue
-            elif cont == 'No':
+            else:
+                with sqlite3.connect('subjects.db') as con:
+                    cur = con.cursor()
+                    command = '''INSERT INTO {} (sessions, hours, date) VALUES (?, ?, ?)'''.format(subject)
+                    cur.execute(command, (sessions, hours, date.strftime('%m-%d-%Y')))
                 break
 
-        notification.notify(title='Congratulations!', message='You have completed your study sessions for today')
-
-        today = str(date.today())
-
-        with open(sbj_file, 'a') as subject:
-            subject.write(f'DATE:{today}\nSESSIONS:{str(sessions)}\nHOURS:{str(hours)}\n\n')
-
-        session_lst = []
-        hours_lst = []
-
-        with open(sbj_file, 'r') as subject:
-            for line in subject:
-                if line.startswith('SESSIONS:'):
-                    line = line.split(':')
-                    sess = int(line[1])
-                    session_lst.append(sess)
-                elif line.startswith('HOURS:'):
-                    line = line.split(':')
-                    hrs = float(line[1])
-                    hours_lst.append(hrs)
-
-        total_hrs = str(sum(hours_lst))
-        total_sessions = str(sum(session_lst))
-
-        print('You have completed', sessions, 'sessions today')
-        print('You have completed', hours, 'hours today')
-        print('You have', total_hrs, 'total hours of study on', sbj)
-        print('you have', total_sessions, 'total', sbj, 'study sessions')
-
     elif choice == '2':
+        print('')
+        subject = input('What subject would you like to view?').capitalize()
 
-        sessions = []
-        hours = []
+        con = sqlite3.connect('subjects.db')
+        cur = con.cursor()
+        sessions_cmd = '''SELECT SUM(sessions) FROM {}'''.format(subject)
+        hours_cmd = '''SELECT SUM(hours) FROM {}'''.format(subject)
+        cur.execute(sessions_cmd)
+        total_sessions = cur.fetchone()[0]
+        cur.execute(hours_cmd)
+        total_hrs = cur.fetchone()[0]
+        productive_day_cmd = '''SELECT date, MAX(hours), MAX(sessions) FROM {}'''.format(subject)
+        cur.execute(productive_day_cmd)
+        productive_day = cur.fetchone()
 
-        sbj = input('What subject would you like to view?')
-        sbj_file = sbj.capitalize() + '.txt'
-        with open(sbj_file, 'r') as subject:
-            for line in subject:
-                if line.startswith('sessions:'):
-                    line = line.split(':')
-                    sess = int(line[1])
-                    sessions.append(sess)
-                elif line.startswith('hours:'):
-                    line = line.split(':')
-                    hrs = float(line[1])
-                    hours.append(hrs)
-
-        print('You have completed', sum(sessions), 'total sessions for', sbj)
-        print('You have completed', sum(hours), 'total hours')
+        print('')
+        print('You have completed ' + str(total_sessions) + ' total session(s) for ' + subject)
+        print('You have completed ' + str(total_hrs) + ' total hours of study on ' + subject)
+        print('Your most productive day was ' + str(productive_day[0]) + ' with ' + str(productive_day[1]) +
+              ' total hour(s) and ' + str(productive_day[2]) + ' total sessions completed')
+        print('')
 
     elif choice == '3':
         break
+
