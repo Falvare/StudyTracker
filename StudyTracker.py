@@ -20,7 +20,7 @@ while option != '3':
         sessions = 0
         hours = 0
         date = date.today()
-        subject = input('please enter subject name:')
+        subject = input('please enter subject name:').capitalize()
 
         con = sqlite3.connect('subjects.db')
         cur = con.cursor()
@@ -34,7 +34,7 @@ while option != '3':
             print('Your study session will begin in 5 seconds')
             time.sleep(5)
             notification.notify(title=subject, message='your study session has started', timeout=10)
-            time.sleep(1800)
+            time.sleep(5)
             notification.notify(title=subject, message='Your study session has ended. Would you like to continue?',
                                 timeout=5)
             sessions += 1
@@ -48,6 +48,11 @@ while option != '3':
                     cur = con.cursor()
                     command = '''INSERT INTO {} (sessions, hours, date) VALUES (?, ?, ?)'''.format(subject)
                     cur.execute(command, (sessions, hours, date.strftime('%m-%d-%Y')))
+
+                print('')
+                print('You have completed ' + str(sessions) + ' total session(s) today')
+                print('You have completed ' + str(hours) + ' total hour(s) of study today')
+                print('')
                 break
 
     elif choice == '2':
@@ -75,4 +80,3 @@ while option != '3':
 
     elif choice == '3':
         break
-
