@@ -12,6 +12,7 @@ while option != '3':
     print('1.start study session')
     print('2.view stats')
     print('3.quit')
+    print('')
 
     choice = input('option:')
 
@@ -30,9 +31,10 @@ while option != '3':
         cur.execute(command)
 
         while True:
+            print('Your study session will begin in 5 seconds')
             time.sleep(5)
             notification.notify(title=subject, message='your study session has started', timeout=10)
-            time.sleep(5)
+            time.sleep(1800)
             notification.notify(title=subject, message='Your study session has ended. Would you like to continue?',
                                 timeout=5)
             sessions += 1
@@ -47,6 +49,29 @@ while option != '3':
                     command = '''INSERT INTO {} (sessions, hours, date) VALUES (?, ?, ?)'''.format(subject)
                     cur.execute(command, (sessions, hours, date.strftime('%m-%d-%Y')))
                 break
+
+    elif choice == '2':
+        print('')
+        subject = input('What subject would you like to view?').capitalize()
+
+        con = sqlite3.connect('subjects.db')
+        cur = con.cursor()
+        sessions_cmd = '''SELECT SUM(sessions) FROM {}'''.format(subject)
+        hours_cmd = '''SELECT SUM(hours) FROM {}'''.format(subject)
+        cur.execute(sessions_cmd)
+        total_sessions = cur.fetchone()[0]
+        cur.execute(hours_cmd)
+        total_hrs = cur.fetchone()[0]
+        productive_day_cmd = '''SELECT date, MAX(hours), MAX(sessions) FROM {}'''.format(subject)
+        cur.execute(productive_day_cmd)
+        productive_day = cur.fetchone()
+
+        print('')
+        print('You have completed ' + str(total_sessions) + ' total session(s) for ' + subject)
+        print('You have completed ' + str(total_hrs) + ' total hours of study on ' + subject)
+        print('Your most productive day was ' + str(productive_day[0]) + ' with ' + str(productive_day[1]) +
+              ' total hour(s) and ' + str(productive_day[2]) + ' total sessions completed')
+        print('')
 
     elif choice == '3':
         break
