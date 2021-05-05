@@ -34,7 +34,7 @@ while option != '3':
             print('Your study session will begin in 5 seconds')
             time.sleep(5)
             notification.notify(title=subject, message='your study session has started', timeout=10)
-            time.sleep(5)
+            time.sleep(1800)
             notification.notify(title=subject, message='Your study session has ended. Would you like to continue?',
                                 timeout=5)
             sessions += 1
