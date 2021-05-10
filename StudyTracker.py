@@ -4,9 +4,7 @@ import time
 from datetime import date
 from pymsgbox import *
 
-option = None
-
-while option != '3':
+while True:
 
     print('PLEASE SELECT AN OPTION:')
     print('1.start study session')
@@ -14,9 +12,9 @@ while option != '3':
     print('3.quit')
     print('')
 
-    choice = input('option:')
+    option = input('option:')
 
-    if choice == '1':
+    if option == '1':
         sessions = 0
         hours = 0
         date = date.today()
@@ -39,9 +37,9 @@ while option != '3':
                                 timeout=5)
             sessions += 1
             hours += .5
-            con = confirm(text='Your study session has ended. Would you like to continue?', title=subject,
-                          buttons=['Yes', 'No'])
-            if con == 'Yes':
+            conf = confirm(text='Your study session has ended. Would you like to continue?', title=subject,
+                           buttons=['Yes', 'No'])
+            if conf == 'Yes':
                 continue
             else:
                 with sqlite3.connect('subjects.db') as con:
@@ -55,28 +53,51 @@ while option != '3':
                 print('')
                 break
 
-    elif choice == '2':
+    elif option == '2':
         print('')
         subject = input('What subject would you like to view?').capitalize()
 
-        con = sqlite3.connect('subjects.db')
-        cur = con.cursor()
-        sessions_cmd = '''SELECT SUM(sessions) FROM {}'''.format(subject)
-        hours_cmd = '''SELECT SUM(hours) FROM {}'''.format(subject)
-        cur.execute(sessions_cmd)
-        total_sessions = cur.fetchone()[0]
-        cur.execute(hours_cmd)
-        total_hrs = cur.fetchone()[0]
-        productive_day_cmd = '''SELECT date, MAX(hours), MAX(sessions) FROM {}'''.format(subject)
-        cur.execute(productive_day_cmd)
-        productive_day = cur.fetchone()
+        try:
+            with sqlite3.connect('subjects.db') as con:
+                cur = con.cursor()
+                sessions_cmd = '''SELECT SUM(sessions) FROM {}'''.format(subject)
+                hours_cmd = '''SELECT SUM(hours) FROM {}'''.format(subject)
+                cur.execute(sessions_cmd)
+                total_sessions = cur.fetchone()[0]
+                if total_sessions is None:
+                    total_sessions = 0
+                cur.execute(hours_cmd)
+                total_hrs = cur.fetchone()[0]
+                if total_hrs is None:
+                    total_hrs = 0
+                productive_day_cmd = '''SELECT date, MAX(hours), MAX(sessions) FROM {}'''.format(subject)
+                cur.execute(productive_day_cmd)
+                productive_day = cur.fetchone()
 
-        print('')
-        print('You have completed ' + str(total_sessions) + ' total session(s) for ' + subject)
-        print('You have completed ' + str(total_hrs) + ' total hours of study on ' + subject)
-        print('Your most productive day was ' + str(productive_day[0]) + ' with ' + str(productive_day[1]) +
-              ' total hour(s) and ' + str(productive_day[2]) + ' total sessions completed')
-        print('')
+                print('')
+                print('You have completed ' + str(total_sessions) + ' total session(s) for ' + subject)
+                print('You have completed ' + str(total_hrs) + ' total hours of study on ' + subject)
+                if total_sessions == 0:
+                    print('')
+                else:
+                    print('Your most productive day was ' + str(productive_day[0]) + ' with ' + str(productive_day[1]) +
+                          ' total hour(s) and ' + str(productive_day[2]) + ' total sessions completed')
+                    print('')
 
-    elif choice == '3':
+        except Exception:
+            conf = confirm(text=subject + ' is not in your subjects. Would you like to add it now?', title=subject,
+                           buttons=['Yes', 'No'])
+            if conf == 'Yes':
+                with sqlite3.connect('subjects.db') as con:
+                    cur = con.cursor()
+                    command = '''CREATE TABLE {} (
+                        sessions INTEGER, 
+                        hours FLOAT, 
+                        date TEXT)'''.format(subject)
+                    cur.execute(command)
+                    alert(text=subject + ' added successfully')
+            else:
+                alert(text='Please enter another subject')
+
+    elif option == '3':
         break
